@@ -2,12 +2,14 @@
 #include <string>
 #include <vector>
 #include <queue>
+#include <map>
 using namespace std;
 
 // node custom_setup();
 struct node;
 
 int algChoice;
+bool solutionFound = 0;
 vector< vector<int> > closed;
 vector< vector<int> > open;
 priority_queue< node, vector<node>, greater<node> > pq; 
@@ -21,7 +23,9 @@ struct node {
     node parent();
 
     node() {};
-    node(vector<int> rows);
+    node(vector<int> rows) {
+        state = rows;
+    }
     void setHeuristic(int algChoice, int parentHeur);
     void solve();
     void expand();
@@ -29,12 +33,20 @@ struct node {
     void swap(int a, int b);
 };
 
+struct manhattanVals {
+    int val;
+    int x;
+    int y;
+
+    manhattanVals(int val, int x, int y) {
+        val = val;
+        x = x;
+        y = y;
+    }
+};
+
 bool operator>( const node& lhs, const node& rhs ) {
   return lhs.heuristic > rhs.heuristic;
-}
-
-node::node(vector<int> rows) {
-    state = rows;
 }
 
 void node::setHeuristic(int algChoice, int parentHeur) {
@@ -49,7 +61,19 @@ void node::setHeuristic(int algChoice, int parentHeur) {
         }
         this->heuristic = misplacedNum;
     } else if (algChoice == 3) { //use Manhattan Distance
-
+        vector<manhattanVals> vals;
+        vals.push_back(manhattanVals(1, 0, 0));
+        vals.push_back(manhattanVals(2, 0, 1));
+        vals.push_back(manhattanVals(3, 0, 2));
+        vals.push_back(manhattanVals(4, 1, 0));
+        vals.push_back(manhattanVals(5, 1, 1));
+        vals.push_back(manhattanVals(6, 1, 2));
+        vals.push_back(manhattanVals(7, 2, 0));
+        vals.push_back(manhattanVals(8, 2, 1));
+        for (int i = 0; i < state.size(); i++) {
+            
+        }
+        }
     }
 }
 
@@ -88,7 +112,7 @@ void node::swap(int a, int b) {
     if (newNode.state == goalState.state) {
         cout << "Solution found: " << endl;
         printCurr(newNode);
-        exit(0);
+        solutionFound = 1;
     }
     newNode.setHeuristic(algChoice, this->heuristic);
     for (int i = 0; i < open.size(); i++) {
@@ -128,7 +152,7 @@ void node::expand() {
 }
 
 void node::solve() {
-    while(!pq.empty()) {
+    while(!pq.empty() && !solutionFound) {
         node expandNode = pq.top();
         pq.pop();
         cout << "Expanding: " << endl;
