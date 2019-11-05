@@ -8,152 +8,177 @@ using namespace std;
 struct node;
 
 int algChoice;
-vector<node> closed;
-vector<node> open;
-priority_queue<node, vector<node>, greater<int> > my_min_heap;
+vector< vector<int> > closed;
+vector< vector<int> > open;
+priority_queue< node, vector<node>, greater<node> > pq; 
+
+void printCurr(node); 
 
 
 struct node {
-    vector< vector<int> > state;
+    vector<int> state;
     int heuristic;
-    node* parent;
+    node parent();
 
     node() {};
-    node(vector<int>,vector<int>,vector<int>);
-    void setHeuristic(int algChoice);
+    node(vector<int> rows);
+    void setHeuristic(int algChoice, int parentHeur);
     void solve();
     void expand();
-    void validOps();
-    void up();
     int find0();
+    void swap(int a, int b);
 };
 
-node::node(vector<int> row1, vector<int> row2, vector<int> row3) {
-    state.push_back(row1);
-    state.push_back(row2);
-    state.push_back(row3);
+bool operator>( const node& lhs, const node& rhs ) {
+  return lhs.heuristic > rhs.heuristic;
 }
 
-void node::setHeuristic(int algChoice) {
+node::node(vector<int> rows) {
+    state = rows;
+}
+
+void node::setHeuristic(int algChoice, int parentHeur) {
     if (algChoice == 1) { //use Uniform Cost Search (A*, h(n) = 0) basically BFS
-        this->heuristic = 1;
+        this->heuristic = parentHeur + 1;
     } else if (algChoice == 2) { //use Misplaced Tile Heuristic
-        
+        int misplacedNum = 0;
+        for (int i = 0; i < state.size(); i++) {
+            if (state.at(i) != i + 1 && state.at(i) != 0) {
+                misplacedNum++;
+            }
+        }
+        this->heuristic = misplacedNum;
     } else if (algChoice == 3) { //use Manhattan Distance
 
     }
 }
 
 int node::find0() {
-    if (state.at(0).at(0) == 0) {
-        return 1;
-    } else if (state.at(0).at(1) == 0) {
-        return 2;
-    } else if (state.at(0).at(2) == 0) {
-        return 3;
-    } else if (state.at(1).at(0) == 0) {
-        return 4;
-    } else if (state.at(1).at(1) == 0) {
-        return 5;
-    } else if (state.at(1).at(2) == 0) {
-        return 6;
-    } else if (state.at(2).at(0) == 0) {
-        return 7;
-    } else if (state.at(2).at(1) == 0) {
-        return 8;
-    } else if (state.at(2).at(2) == 0) {
-        return 9;
+    for (int i = 0; i < state.size(); i++) {
+        if (state.at(i) == 0) {
+            return i;
+        }
     }
     return -1;
 }
 
-void node::expand() {
-    node newNode;
-    cout << "IN EXPAND" << endl;
-    if (find0() >= 1 && find0() <= 6) {
-        cout << "can shift down" << endl;
-        
-    } 
-    if (find0() >= 4 && find0() <= 9) {
-        cout << "can shift up" << endl;
-        //up
-    } 
-    if (find0() == 1 || find0() == 2 || find0() == 4 || find0() == 5 || find0() == 7 || find0() == 8) {
-        cout << "can shift right" << endl;
-        //right
-    } 
-    if (find0() == 2 || find0() == 3 || find0() == 5 || find0() == 6 || find0() == 8 || find0() == 9) {
-        cout << "can shift left" << endl;
-        //left
+void node::swap(int a, int b) {
+    bool add = 1;
+    vector<int> goal;
+    goal.push_back(1);
+    goal.push_back(2);
+    goal.push_back(3);
+    goal.push_back(4);
+    goal.push_back(5);
+    goal.push_back(6);
+    goal.push_back(7);
+    goal.push_back(8);
+    goal.push_back(0);
+
+    node goalState(goal);
+
+    vector<int> newVec;
+    newVec = state;
+    int temp;
+    temp = newVec.at(a);
+    newVec.at(a) = newVec.at(b);
+    newVec.at(b) = temp;
+
+    node newNode(newVec);
+    if (newNode.state == goalState.state) {
+        cout << "Solution found: " << endl;
+        printCurr(newNode);
+        exit(0);
+    }
+    newNode.setHeuristic(algChoice, this->heuristic);
+    for (int i = 0; i < open.size(); i++) {
+        if (open.at(i) == newNode.state) {
+            add = 0;
+        }
+    }
+    for (int i = 0; i < closed.size(); i++) {
+        if (closed.at(i) == newNode.state) {
+            add = 0;
+        }
+    }
+    if (add) {
+        pq.push(newNode);
+        open.push_back(newNode.state);
     }
 }
 
-void node::validOps() {
-
+void node::expand() {
+    node newNode;
+    if (find0() >= 0 && find0() <= 5) {
+        cout << "Moving down" << endl;
+        swap(find0(), find0() + 3);
+    } 
+    if (find0() >= 3 && find0() <= 8) {
+        cout << "Moving up" << endl;
+        swap(find0(), find0() - 3);
+    } 
+    if (find0() == 0 || find0() == 1 || find0() == 3 || find0() == 4 || find0() == 6 || find0() == 7) {
+        cout << "Moving right" << endl;
+        swap(find0(), find0() + 1);
+    } 
+    if (find0() == 1 || find0() == 2 || find0() == 4 || find0() == 5 || find0() == 7 || find0() == 8) {
+        cout << "Moving left" << endl;
+        swap(find0(), find0() - 1);
+    }
 }
 
 void node::solve() {
-    this->expand();
+    while(!pq.empty()) {
+        node expandNode = pq.top();
+        pq.pop();
+        cout << "Expanding: " << endl;
+        printCurr(expandNode);
+        expandNode.expand();
+    }
+    // for (int i = 0; i < 50; i++) {
+    //     node expandNode = pq.top();
+    //     pq.pop();
+    //     printCurr(expandNode);
+    //     expandNode.expand();
+    // }
 }
-
-
 
 //void default_setup();
 
 void printCurr(node currNode) {
     for (int i = 0; i < currNode.state.size(); i++) {
-        for (int j = 0; j < currNode.state.at(i).size(); j++) {
-            cout << currNode.state.at(i).at(j) << " ";
+        if (i % 3 == 0) {
+            cout << endl;
         }
-        cout << endl;
+        cout << currNode.state.at(i) << " ";
     }
     cout << endl;
 }
 
 node custom_setup() {
     int pos1, pos2, pos3, pos4, pos5, pos6, pos7, pos8, pos9;
-    vector< vector<int> > startNode;
-    vector<int> startRow1;
-    vector<int> startRow2;
-    vector<int> startRow3;
+    vector<int> startRow;
 
     cout << "Enter the first row, use spaces or tabs between inputs: ";
     cin >> pos1 >> pos2 >> pos3;
-    startRow1.push_back(pos1);
-    startRow1.push_back(pos2);
-    startRow1.push_back(pos3);
+    startRow.push_back(pos1);
+    startRow.push_back(pos2);
+    startRow.push_back(pos3);
     cout << "Enter the second row, use spaces or tabs between inputs: ";
     cin >> pos4 >> pos5 >> pos6;
-    startRow2.push_back(pos4);
-    startRow2.push_back(pos5);
-    startRow2.push_back(pos6);
+    startRow.push_back(pos4);
+    startRow.push_back(pos5);
+    startRow.push_back(pos6);
     cout << "Enter the third row, use spaces or tabs between inputs: ";
     cin >> pos7 >> pos8 >> pos9;
-    startRow3.push_back(pos7);
-    startRow3.push_back(pos8);
-    startRow3.push_back(pos9);
+    startRow.push_back(pos7);
+    startRow.push_back(pos8);
+    startRow.push_back(pos9);
 
-    startNode.push_back(startRow1);
-    startNode.push_back(startRow2);
-    startNode.push_back(startRow3);
-    node startState(startRow1, startRow2, startRow3);
+    node startState(startRow);
     printCurr(startState);
 
-    vector<int> goalRow1;
-    vector<int> goalRow2;
-    vector<int> goalRow3;
-    goalRow1.push_back(1);
-    goalRow1.push_back(2);
-    goalRow1.push_back(3);
-    goalRow2.push_back(4);
-    goalRow2.push_back(5);
-    goalRow2.push_back(6);
-    goalRow3.push_back(7);
-    goalRow3.push_back(8);
-    goalRow3.push_back(0);
 
-    node goalState(goalRow1, goalRow2, goalRow3);
-    printCurr(goalState);
 
     return startState;
 }
@@ -183,8 +208,11 @@ void start() {
          << endl << "3. A* with the Manhattan Distance Heuristic" << endl;
 
     cin >> algChoice;
-    starting.setHeuristic(algChoice);
+    starting.setHeuristic(algChoice, 0);
+    pq.push(starting);
+    open.push_back(starting.state);
     starting.solve();
+
 }
 
 int main() {
