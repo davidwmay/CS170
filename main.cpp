@@ -5,13 +5,13 @@
 #include <map>
 using namespace std;
 
-// node custom_setup();
 struct node;
 
 int algChoice;
 bool solutionFound = 0;
 vector< vector<int> > closed;
 vector< vector<int> > open;
+vector< vector<int> > explored;
 priority_queue< node, vector<node>, greater<node> > pq; 
 
 void printCurr(node); 
@@ -27,6 +27,7 @@ struct node {
     node(vector<int> rows) {
         state = rows;
     }
+
     void setHeuristic(int algChoice, int parentHeur);
     void solve();
     void expand();
@@ -92,7 +93,7 @@ int node::manhattanDistance() {
 
 void node::setHeuristic(int algChoice, int parentHeur) {
     depth = parentHeur + 1;
-    cout << "The best state to expand with a g(n) = " << parentHeur;
+    cout << "The best state to expand with a g(n) = " << parentHeur + 1;
     if (algChoice == 1) { //use Uniform Cost Search (A*, h(n) = 0) basically BFS
         heuristic = parentHeur + 1;
         cout << " and a h(n) = 0 is..." << endl;
@@ -103,7 +104,7 @@ void node::setHeuristic(int algChoice, int parentHeur) {
                 misplacedNum++;
             }
         }
-        cout << parentHeur + 1 << " and a h(n) = " << misplacedNum << " is..." << endl;
+        cout << " and a h(n) = " << misplacedNum << " is..." << endl;
         heuristic = misplacedNum + parentHeur + 1;
     } else if (algChoice == 3) { //use Manhattan Distance
         heuristic = manhattanDistance() + parentHeur + 1;
@@ -123,19 +124,6 @@ int node::find0() {
 
 void node::swap(int a, int b) {
     bool add = 1;
-    vector<int> goal;
-    goal.push_back(1);
-    goal.push_back(2);
-    goal.push_back(3);
-    goal.push_back(4);
-    goal.push_back(5);
-    goal.push_back(6);
-    goal.push_back(7);
-    goal.push_back(8);
-    goal.push_back(0);
-
-    node goalState(goal);
-
     vector<int> newVec;
     newVec = state;
     int temp;
@@ -144,9 +132,6 @@ void node::swap(int a, int b) {
     newVec.at(b) = temp;
 
     node newNode(newVec);
-    if (newNode.state == goalState.state) {
-        solutionFound = 1;
-    }
     int heur = depth;
     newNode.setHeuristic(algChoice, heur);
     for (int i = 0; i < open.size(); i++) {
@@ -168,37 +153,51 @@ void node::swap(int a, int b) {
 }
 
 void node::expand() {
-    if (find0() >= 0 && find0() <= 5 && !solutionFound) {
+
+    if (find0() >= 0 && find0() <= 5) {
         swap(find0(), find0() + 3);
     } 
-    if (find0() >= 3 && find0() <= 8 && !solutionFound) {
+    if (find0() >= 3 && find0() <= 8) {
         swap(find0(), find0() - 3);
     } 
     if (find0() == 0 || find0() == 1 || find0() == 3 || find0() == 4 || find0() == 6 || find0() == 7) {
-        if (!solutionFound) {
-            swap(find0(), find0() + 1);
-        }
+        swap(find0(), find0() + 1);
     } 
     if (find0() == 1 || find0() == 2 || find0() == 4 || find0() == 5 || find0() == 7 || find0() == 8) {
-        if (!solutionFound) {
-            swap(find0(), find0() - 1);
-        }
+        swap(find0(), find0() - 1);
     }
 
     for (int i = 0; i < open.size(); i++) {
         if (open.at(i) == state) {
             closed.push_back(state);
-            open.erase(open.begin() + i + 1);
+            open.erase(open.begin() + i);
         }
     }
+
+    explored.push_back(state);
 }
 
 void node::solve() {
-    while(!pq.empty() && !solutionFound) {
+    vector<int> goal;
+    goal.push_back(1);
+    goal.push_back(2);
+    goal.push_back(3);
+    goal.push_back(4);
+    goal.push_back(5);
+    goal.push_back(6);
+    goal.push_back(7);
+    goal.push_back(8);
+    goal.push_back(0);
+    node goalState(goal);
+
+    while(!pq.empty()) {
         node expandNode = pq.top();
         pq.pop();
-    //    cout << "Expanding: " << endl;
-        // printCurr(expandNode);
+        if (expandNode.state == goalState.state) {
+            cout << "Goal state found: ";
+            printCurr(goalState);
+            return;
+        }
         expandNode.expand();
     }
 }
@@ -270,13 +269,13 @@ void start() {
     pq.push(starting);
     open.push_back(starting.state);
     starting.solve();
-
 }
 
 int main() {
     start();
 
-    cout << "Number of nodes expanded: " << closed.size() << endl;
-    cout << "Number of nodes discovered: " << open.size() << endl;
+    cout << "Number of nodes expanded: " << explored.size() << endl;
+    cout << "Number of nodes in closed list: " << closed.size() << endl;
+    cout << "Number of nodes in open list: " << open.size() << endl;
     return 0;
 }
