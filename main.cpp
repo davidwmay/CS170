@@ -20,6 +20,7 @@ void printCurr(node);
 struct node {
     vector<int> state;
     int heuristic;
+    int depth;
     node parent();
 
     node() {};
@@ -31,6 +32,7 @@ struct node {
     void expand();
     int find0();
     void swap(int a, int b);
+    int manhattanDistance();
 };
 
 struct manhattanVals {
@@ -39,9 +41,13 @@ struct manhattanVals {
     int y;
 
     manhattanVals(int val, int x, int y) {
-        val = val;
-        x = x;
-        y = y;
+        this->val = val;
+        this->x = x;
+        this->y = y;
+    }
+
+    int getVal() {
+        return this->val;
     }
 };
 
@@ -49,9 +55,47 @@ bool operator>( const node& lhs, const node& rhs ) {
   return lhs.heuristic > rhs.heuristic;
 }
 
+int node::manhattanDistance() {
+    vector<manhattanVals> baseVals;
+    vector<manhattanVals> currVals;
+    int count = 0;
+
+    baseVals.push_back(manhattanVals(1, 0, 0));
+    baseVals.push_back(manhattanVals(2, 0, 1));
+    baseVals.push_back(manhattanVals(3, 0, 2));
+    baseVals.push_back(manhattanVals(4, 1, 0));
+    baseVals.push_back(manhattanVals(5, 1, 1));
+    baseVals.push_back(manhattanVals(6, 1, 2));
+    baseVals.push_back(manhattanVals(7, 2, 0));
+    baseVals.push_back(manhattanVals(8, 2, 1));
+    baseVals.push_back(manhattanVals(0, 2, 2));
+    
+    currVals.push_back(manhattanVals(state.at(0), 0, 0));
+    currVals.push_back(manhattanVals(state.at(1), 0, 1));
+    currVals.push_back(manhattanVals(state.at(2), 0, 2));
+    currVals.push_back(manhattanVals(state.at(3), 1, 0));
+    currVals.push_back(manhattanVals(state.at(4), 1, 1));
+    currVals.push_back(manhattanVals(state.at(5), 1, 2));
+    currVals.push_back(manhattanVals(state.at(6), 2, 0));
+    currVals.push_back(manhattanVals(state.at(7), 2, 1));
+    currVals.push_back(manhattanVals(state.at(8), 2, 2));
+
+    for (int i = 0; i < currVals.size(); i++) {
+        for (int j = 0; j < baseVals.size(); j++) {
+            if (currVals.at(i).val == baseVals.at(j).val && currVals.at(i).val != 0) {
+                count += abs(currVals.at(i).x - baseVals.at(j).x) + abs(currVals.at(i).y - baseVals.at(j).y);
+            }
+        }
+    }
+    return count;
+}
+
 void node::setHeuristic(int algChoice, int parentHeur) {
+    depth = parentHeur + 1;
+    cout << "The best state to expand with a g(n) = " << parentHeur;
     if (algChoice == 1) { //use Uniform Cost Search (A*, h(n) = 0) basically BFS
-        this->heuristic = parentHeur + 1;
+        heuristic = parentHeur + 1;
+        cout << " and a h(n) = 0 is..." << endl;
     } else if (algChoice == 2) { //use Misplaced Tile Heuristic
         int misplacedNum = 0;
         for (int i = 0; i < state.size(); i++) {
@@ -59,22 +103,13 @@ void node::setHeuristic(int algChoice, int parentHeur) {
                 misplacedNum++;
             }
         }
-        this->heuristic = misplacedNum;
+        cout << parentHeur + 1 << " and a h(n) = " << misplacedNum << " is..." << endl;
+        heuristic = misplacedNum + parentHeur + 1;
     } else if (algChoice == 3) { //use Manhattan Distance
-        vector<manhattanVals> vals;
-        vals.push_back(manhattanVals(1, 0, 0));
-        vals.push_back(manhattanVals(2, 0, 1));
-        vals.push_back(manhattanVals(3, 0, 2));
-        vals.push_back(manhattanVals(4, 1, 0));
-        vals.push_back(manhattanVals(5, 1, 1));
-        vals.push_back(manhattanVals(6, 1, 2));
-        vals.push_back(manhattanVals(7, 2, 0));
-        vals.push_back(manhattanVals(8, 2, 1));
-        for (int i = 0; i < state.size(); i++) {
-            
-        }
-        }
+        heuristic = manhattanDistance() + parentHeur + 1;
+        cout << " and a h(n) = " << manhattanDistance() << " is..." << endl;
     }
+    printCurr(*this);
 }
 
 int node::find0() {
@@ -110,11 +145,10 @@ void node::swap(int a, int b) {
 
     node newNode(newVec);
     if (newNode.state == goalState.state) {
-        cout << "Solution found: " << endl;
-        printCurr(newNode);
         solutionFound = 1;
     }
-    newNode.setHeuristic(algChoice, this->heuristic);
+    int heur = depth;
+    newNode.setHeuristic(algChoice, heur);
     for (int i = 0; i < open.size(); i++) {
         if (open.at(i) == newNode.state) {
             add = 0;
@@ -128,26 +162,34 @@ void node::swap(int a, int b) {
     if (add) {
         pq.push(newNode);
         open.push_back(newNode.state);
+    } else {
+        closed.push_back(newNode.state);
     }
 }
 
 void node::expand() {
-    node newNode;
-    if (find0() >= 0 && find0() <= 5) {
-        cout << "Moving down" << endl;
+    if (find0() >= 0 && find0() <= 5 && !solutionFound) {
         swap(find0(), find0() + 3);
     } 
-    if (find0() >= 3 && find0() <= 8) {
-        cout << "Moving up" << endl;
+    if (find0() >= 3 && find0() <= 8 && !solutionFound) {
         swap(find0(), find0() - 3);
     } 
     if (find0() == 0 || find0() == 1 || find0() == 3 || find0() == 4 || find0() == 6 || find0() == 7) {
-        cout << "Moving right" << endl;
-        swap(find0(), find0() + 1);
+        if (!solutionFound) {
+            swap(find0(), find0() + 1);
+        }
     } 
     if (find0() == 1 || find0() == 2 || find0() == 4 || find0() == 5 || find0() == 7 || find0() == 8) {
-        cout << "Moving left" << endl;
-        swap(find0(), find0() - 1);
+        if (!solutionFound) {
+            swap(find0(), find0() - 1);
+        }
+    }
+
+    for (int i = 0; i < open.size(); i++) {
+        if (open.at(i) == state) {
+            closed.push_back(state);
+            open.erase(open.begin() + i + 1);
+        }
     }
 }
 
@@ -155,16 +197,10 @@ void node::solve() {
     while(!pq.empty() && !solutionFound) {
         node expandNode = pq.top();
         pq.pop();
-        cout << "Expanding: " << endl;
-        printCurr(expandNode);
+    //    cout << "Expanding: " << endl;
+        // printCurr(expandNode);
         expandNode.expand();
     }
-    // for (int i = 0; i < 50; i++) {
-    //     node expandNode = pq.top();
-    //     pq.pop();
-    //     printCurr(expandNode);
-    //     expandNode.expand();
-    // }
 }
 
 //void default_setup();
@@ -176,7 +212,7 @@ void printCurr(node currNode) {
         }
         cout << currNode.state.at(i) << " ";
     }
-    cout << endl;
+    cout << endl << endl;
 }
 
 node custom_setup() {
@@ -202,8 +238,6 @@ node custom_setup() {
     node startState(startRow);
     printCurr(startState);
 
-
-
     return startState;
 }
 
@@ -215,7 +249,7 @@ void start() {
     cout << "Welcome to the 8-puzzle solver!" << endl;
     cout << "Type '1' to use a default puzzle or '2' to enter your own: ";
 
-    do { //ERROR IF ENTER NON-NUMBER INPUT
+    do {
         cin >> setupChoice;
         if (setupChoice == 1) {
             //default_setup            
@@ -241,5 +275,8 @@ void start() {
 
 int main() {
     start();
+
+    cout << "Number of nodes expanded: " << closed.size() << endl;
+    cout << "Number of nodes discovered: " << open.size() << endl;
     return 0;
 }
