@@ -102,10 +102,10 @@ int node::manhattanDistance() {
 
 void node::queueingFunction(int algChoice, int parentHeur) {
     depth = parentHeur + 1;
-    cout << "The best state to expand with a g(n) = " << parentHeur + 1;
+    // cout << "The best state to expand with a g(n) = " << parentHeur + 1;
     if (algChoice == 1) { //use Uniform Cost Search (A*, h(n) = 0) basically BFS
         heuristic = parentHeur + 1;
-        cout << " and a h(n) = 0 is..." << endl;
+        // cout << " and a h(n) = 0 is..." << endl;
     } else if (algChoice == 2) { //use Misplaced Tile Heuristic
         int misplacedNum = 0;
         for (int i = 0; i < state.size(); i++) {
@@ -113,13 +113,13 @@ void node::queueingFunction(int algChoice, int parentHeur) {
                 misplacedNum++;
             }
         }
-        cout << " and a h(n) = " << misplacedNum << " is..." << endl;
+        // cout << " and a h(n) = " << misplacedNum << " is..." << endl;
         heuristic = misplacedNum + parentHeur + 1;
     } else if (algChoice == 3) { //use Manhattan Distance
         heuristic = manhattanDistance() + parentHeur + 1;
-        cout << " and a h(n) = " << manhattanDistance() << " is..." << endl;
+        // cout << " and a h(n) = " << manhattanDistance() << " is..." << endl;
     }
-    printCurr(*this);
+    //printCurr(*this);
 }
 
 // Locates position of 0 in an object's state to simplify swapping
@@ -173,6 +173,10 @@ void node::swap(int a, int b) {
 
 void node::expand() {
 
+    cout << "The best state to expand with a g(n) = " << depth;
+    cout << " and a h(n) = " << heuristic - depth << " is..." << endl;
+    printCurr(*this);
+
     if (find0() >= 0 && find0() <= 5) {
         swap(find0(), find0() + 3);
     } 
@@ -215,9 +219,9 @@ void node::solve() {
         node expandNode = pq.top();
         pq.pop();
         if (expandNode.state == goalState.state) {
-            cout << "Goal state found: ";
+            cout << "Goal state found!" << endl;
             printCurr(goalState);
-            cout << "The depth of the goal node is " << expandNode.depth - 1 << endl;
+            cout << "The depth of the goal node was " << expandNode.depth - 1 << "." << endl;
             return;
         }
         expandNode.expand();
@@ -304,6 +308,7 @@ void start() {
          << endl << "3. A* with the Manhattan Distance Heuristic" << endl;
 
     cin >> algChoice;
+    cout << endl;
     starting.queueingFunction(algChoice, 0);
     pq.push(starting);
     if (pq.size() > maxQueue) {
@@ -316,9 +321,9 @@ void start() {
 int main() {
     start();
 
-    cout << "Number of nodes expanded: " << explored.size() << endl;
-    cout << "Number of nodes in closed list: " << closed.size() << endl;
-    cout << "Number of nodes in open list: " << open.size() << endl;
-    cout << "Maximum number of nodes in the queue at a time: " << maxQueue << endl;
+    cout << "To solve this problem the search algorithm expanded a total of " << explored.size() << " nodes." << endl;
+//    cout << "Number of nodes in closed list: " << closed.size() << endl;
+//    cout << "Number of nodes in open list: " << open.size() << endl;
+    cout << "The maximum number of nodes in the queue at any one time was " << maxQueue << "." << endl << endl;
     return 0;
 }
