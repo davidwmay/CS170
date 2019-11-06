@@ -2,39 +2,40 @@
 #include <string>
 #include <vector>
 #include <queue>
-#include <map>
 using namespace std;
 
 struct node;
-
-int algChoice;
-bool solutionFound = 0;
-vector< vector<int> > closed;
-vector< vector<int> > open;
-vector< vector<int> > explored;
+int algChoice; // Used to determine which heuristic function is in use
+int maxQueue = 0; // Stores the maximum value of nodes contained in the priority queue simultaneously
+vector< vector<int> > closed; // Contains states of node that have been expanded, or that are repeated
+vector< vector<int> > open; // Contains states of nodes that have been discovered and not expanded
+vector< vector<int> > explored; // Contains the states of nodes that have been expanded
 priority_queue< node, vector<node>, greater<node> > pq; 
 
 void printCurr(node); 
 
 
 struct node {
-    vector<int> state;
+    vector<int> state; 
     int heuristic;
     int depth;
-    node parent();
 
     node() {};
     node(vector<int> rows) {
         state = rows;
     }
 
-    void setHeuristic(int algChoice, int parentHeur);
+    void queueingFunction(int algChoice, int parentHeur);
     void solve();
     void expand();
+
     int find0();
     void swap(int a, int b);
     int manhattanDistance();
 };
+
+// Used to compare and calculate manhattanDistance of a state,
+// provides 'baseline' for calculation
 
 struct manhattanVals {
     int val;
@@ -55,6 +56,8 @@ struct manhattanVals {
 bool operator>( const node& lhs, const node& rhs ) {
   return lhs.heuristic > rhs.heuristic;
 }
+
+// Calculates a state's Manhattan Distance 
 
 int node::manhattanDistance() {
     vector<manhattanVals> baseVals;
@@ -81,6 +84,9 @@ int node::manhattanDistance() {
     currVals.push_back(manhattanVals(state.at(7), 2, 1));
     currVals.push_back(manhattanVals(state.at(8), 2, 2));
 
+    // General algorithm for calculating Manhattan distance
+    // dist = abs(x2 - x1) + abs(y2-y1)
+
     for (int i = 0; i < currVals.size(); i++) {
         for (int j = 0; j < baseVals.size(); j++) {
             if (currVals.at(i).val == baseVals.at(j).val && currVals.at(i).val != 0) {
@@ -91,7 +97,10 @@ int node::manhattanDistance() {
     return count;
 }
 
-void node::setHeuristic(int algChoice, int parentHeur) {
+// Determines the values of h(n) and g(n) for a node object
+// depending on the value of algChoice 
+
+void node::queueingFunction(int algChoice, int parentHeur) {
     depth = parentHeur + 1;
     cout << "The best state to expand with a g(n) = " << parentHeur + 1;
     if (algChoice == 1) { //use Uniform Cost Search (A*, h(n) = 0) basically BFS
@@ -113,6 +122,8 @@ void node::setHeuristic(int algChoice, int parentHeur) {
     printCurr(*this);
 }
 
+// Locates position of 0 in an object's state to simplify swapping
+
 int node::find0() {
     for (int i = 0; i < state.size(); i++) {
         if (state.at(i) == 0) {
@@ -121,6 +132,9 @@ int node::find0() {
     }
     return -1;
 }
+
+// Swaps the values passed in and uses them to create a new node
+// Calls heuristic function on new node
 
 void node::swap(int a, int b) {
     bool add = 1;
@@ -133,7 +147,7 @@ void node::swap(int a, int b) {
 
     node newNode(newVec);
     int heur = depth;
-    newNode.setHeuristic(algChoice, heur);
+    newNode.queueingFunction(algChoice, heur);
     for (int i = 0; i < open.size(); i++) {
         if (open.at(i) == newNode.state) {
             add = 0;
@@ -146,11 +160,16 @@ void node::swap(int a, int b) {
     }
     if (add) {
         pq.push(newNode);
+        if (pq.size() > maxQueue) {
+            maxQueue = pq.size();
+        }
         open.push_back(newNode.state);
     } else {
         closed.push_back(newNode.state);
     }
 }
+
+// Determines values to be swapped, call swap and add node to explored vector
 
 void node::expand() {
 
@@ -177,6 +196,8 @@ void node::expand() {
     explored.push_back(state);
 }
 
+// Handles dequeueing nodes and checking for solution
+
 void node::solve() {
     vector<int> goal;
     goal.push_back(1);
@@ -196,13 +217,28 @@ void node::solve() {
         if (expandNode.state == goalState.state) {
             cout << "Goal state found: ";
             printCurr(goalState);
+            cout << "The depth of the goal node is " << expandNode.depth - 1 << endl;
             return;
         }
         expandNode.expand();
     }
 }
 
-//void default_setup();
+node default_setup() {
+    vector<int> startRow;
+    startRow.push_back(1);
+    startRow.push_back(2);
+    startRow.push_back(3);
+    startRow.push_back(4);
+    startRow.push_back(0);
+    startRow.push_back(6);
+    startRow.push_back(7);
+    startRow.push_back(5);
+    startRow.push_back(8);
+    node startState(startRow);
+    printCurr(startState);
+    return startState;
+}
 
 void printCurr(node currNode) {
     for (int i = 0; i < currNode.state.size(); i++) {
@@ -240,6 +276,9 @@ node custom_setup() {
     return startState;
 }
 
+// Handles starting inputs to select custom/default setup, and type of search
+// Enqueues first node and calls solve()
+
 void start() {
 
     int setupChoice;
@@ -251,7 +290,7 @@ void start() {
     do {
         cin >> setupChoice;
         if (setupChoice == 1) {
-            //default_setup            
+            starting = default_setup();
             break;
         } else if (setupChoice == 2) {
             starting = custom_setup();
@@ -265,8 +304,11 @@ void start() {
          << endl << "3. A* with the Manhattan Distance Heuristic" << endl;
 
     cin >> algChoice;
-    starting.setHeuristic(algChoice, 0);
+    starting.queueingFunction(algChoice, 0);
     pq.push(starting);
+    if (pq.size() > maxQueue) {
+        maxQueue = pq.size();
+    }
     open.push_back(starting.state);
     starting.solve();
 }
@@ -277,5 +319,6 @@ int main() {
     cout << "Number of nodes expanded: " << explored.size() << endl;
     cout << "Number of nodes in closed list: " << closed.size() << endl;
     cout << "Number of nodes in open list: " << open.size() << endl;
+    cout << "Maximum number of nodes in the queue at a time: " << maxQueue << endl;
     return 0;
 }
