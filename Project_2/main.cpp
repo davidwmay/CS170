@@ -3,6 +3,7 @@ using namespace std;
 #include <string>
 #include <fstream>
 #include <vector>
+#include <cmath>
 
 vector<double> loadData;
 
@@ -26,19 +27,54 @@ struct node {
     }
 };
 
+void normalize(vector<node>& dataVec) {
+    vector<double> mins;
+
+    cout << "Normalizing data... ";
+    
+    // Initializing vector to first value of each feature
+    for (int i = 0; i < dataVec.at(0).features.size(); i++) {
+        mins.push_back(dataVec.at(0).features.at(i));
+    }
+
+    for (int i = 0; i < dataVec.size(); i++) {
+        for (int j = 0; j < dataVec.at(i).features.size(); j++) {
+            if (dataVec.at(i).features.at(j) < mins.at(j)) {
+                mins.at(j) = dataVec.at(i).features.at(j);
+            }
+        }
+    }
+
+    for (int i = 0; i < dataVec.size(); i++) {
+        for (int j = 0; j < dataVec.at(i).features.size(); j++) {
+            dataVec.at(i).features.at(j) = dataVec.at(i).features.at(j) - mins.at(j);
+        }
+    }
+
+    cout << "Done!" << endl;
+
+}
+
+
 
 int main() {
     vector<node> data;
     string fileName;
+    string algChoice;
     ifstream inFile;
     double temp;
 
-    cout << "Type in the name of the file you would like to test: ";
+    cout << "Type in the name of the file you would like to test: " << endl;
     //cin >> fileName;
 
     // 2 lines below for testing only
-    cout << "For testing purposes, testing with small.txt." << endl;
-    fileName = "small.txt";
+    fileName = "test.txt";
+    cout << "For testing purposes, testing with " << fileName << endl;
+    // cout << "Type the number of the algorithm you want to run: " << endl;
+    // cout << "   1) Forward Selection" << endl;
+    // cout << "   2) Backward Elimination" << endl;
+    // cout << "   3) Custom Algorithm" << endl;
+    // cin >> algChoice;
 
     inFile.open(fileName);
 
@@ -61,6 +97,10 @@ int main() {
             data.push_back(newNode);
         }
     }
+
+    normalize(data);
+
+    cout << setprecision(10) << data.at(0).features.at(0) << endl;
 
     // inFile >> test;
     // cout << setprecision(10) << test << endl;
