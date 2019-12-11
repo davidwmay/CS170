@@ -15,9 +15,13 @@ struct node {
     node(int classType, int location) {
         classification = classType;
         location += 1;
-        while (loadData.at(location) != 1 && loadData.at(location) != 2) {
-            features.push_back(loadData.at(location));
-            location += 1;
+
+        for (int i = location; i < loadData.size(); i++) {
+            if (loadData.at(i) == 1 || loadData.at(i) == 2) {
+                break;
+            } else {
+                features.push_back(loadData.at(i));
+            }
         }
     }
 };
@@ -34,7 +38,7 @@ int main() {
 
     // 2 lines below for testing only
     cout << "For testing purposes, testing with small.txt." << endl;
-    fileName = "large.txt";
+    fileName = "small.txt";
 
     inFile.open(fileName);
 
@@ -46,10 +50,6 @@ int main() {
     while (inFile >> temp) {
         loadData.push_back(temp);
     }
-
-    cout << "Done populating features vector." << endl;
-    cout << "Size of features vector " << endl;
-    cout << loadData.size() << endl << endl;
 
     cout << "Populating classes." << endl;
     for (int i = 0; i < loadData.size(); i++) {
