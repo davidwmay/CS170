@@ -26,27 +26,36 @@ struct node {
     }
 };
 
-void normalize(vector<node>& dataVec) {
-    vector<double> mins;
+void normalize(vector<node>& data) {
+    vector<double> featureMin;
+    vector<double> featureMax;
 
     cout << "Normalizing data... ";
     
     // Initializing vector to first value of each feature
-    for (int i = 0; i < dataVec.at(0).features.size(); i++) {
-        mins.push_back(dataVec.at(0).features.at(i));
+    for (int i = 0; i < data.at(0).features.size(); i++) {
+        featureMin.push_back(data.at(0).features.at(i));
+        featureMax.push_back(data.at(0).features.at(i));
     }
 
-    for (int i = 0; i < dataVec.size(); i++) {
-        for (int j = 0; j < dataVec.at(i).features.size(); j++) {
-            if (dataVec.at(i).features.at(j) < mins.at(j)) {
-                mins.at(j) = dataVec.at(i).features.at(j);
+    for (int i = 0; i < data.size(); i++) {
+        for (int j = 0; j < data.at(0).features.size(); j++) {
+            if (data.at(i).features.at(j) < featureMin.at(j)) {
+                featureMin.at(j) = data.at(i).features.at(j);
+            }
+            if (data.at(i).features.at(j) > featureMax.at(j)) {
+                featureMax.at(j) = data.at(i).features.at(j);
             }
         }
     }
 
-    for (int i = 0; i < dataVec.size(); i++) {
-        for (int j = 0; j < dataVec.at(i).features.size(); j++) {
-            dataVec.at(i).features.at(j) = dataVec.at(i).features.at(j) - mins.at(j);
+    for (int i = 0; i < data.size(); i++) {
+        for (int j = 0; j < data.at(0).features.size(); j++) {
+            // cout << "data.at(i).features.at(j) = " << data.at(i).features.at(j) << endl;
+            // cout << "featureMin.at(j) = " << featureMin.at(j) << endl;
+            // cout << "featureMax.at(j) = " << featureMax.at(j) << endl;
+            // cout << "Normalized value: " << (data.at(i).features.at(j) - featureMin.at(j)) / (featureMax.at(j) - featureMin.at(j)) << endl << endl;
+            data.at(i).features.at(j) = (data.at(i).features.at(j) - featureMin.at(j)) / (featureMax.at(j) - featureMin.at(j));
         }
     }
 
@@ -86,9 +95,7 @@ float leave_one_out(vector<node> data, vector<int> featureSet, int featureToAdd)
         if (data.at(i).classification == data.at(bestSoFarLoc).classification) {
             // cout << "I got exemplar " << i << " correct.\n\n";
             numCorrect++;
-        } else {
-            // cout << "I did NOT get exemplar " << i << " correct.\n\n";
-        }
+        } 
     }
     // cout << "float(numCorrect) = " << float(numCorrect) << endl;
     // cout << "(data.size() - 1) = " << data.size() << endl;
@@ -99,6 +106,7 @@ float leave_one_out(vector<node> data, vector<int> featureSet, int featureToAdd)
 
 void forward_selection(vector<node> data) {
     vector<int> featureSet;
+    vector<int> bestFeatures;
     float overallBest = 0;
     bool decrease = 0;
     cout << "Beginning search.\n\n";
@@ -129,6 +137,7 @@ void forward_selection(vector<node> data) {
         featureSet.push_back(featureToAdd);
         if (bestSoFar > overallBest) {
             overallBest = bestSoFar;
+            bestFeatures = featureSet;
         } else if (bestSoFar < overallBest && !decrease) {
             cout << "WARNING: Accuracy has decreased. Continuing search in case of local maxima.\n\n";
             decrease = 1;
@@ -181,13 +190,13 @@ int main() {
         }
     }
 
-    // normalize(data);
+    normalize(data);
     forward_selection(data);
     //vector below for testing
     // vector<int> featureTest;
     // featureTest.push_back(4);
     // featureTest.push_back(6);
-    // leave_one_out(data, featureTest, 2);
+    // leave_one_out(data, featureTest, 6);
 
     inFile.close();
     return 0;
