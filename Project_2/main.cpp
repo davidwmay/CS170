@@ -144,11 +144,19 @@ void forward_selection(vector<node> data) {
         }
 
         cout << "Feature set {";
-        for (int x = 0; x < featureSet.size(); x++) {
+        for (int x = 0; x < featureSet.size() - 1; x++) {
             cout << featureSet.at(x) + 1 << ", ";
         }
+        cout << featureSet.at(featureSet.size() - 1);
         cout << "} was best, accuracy is " << setprecision(10) << bestSoFar * 100 << "%\n\n";
     }
+
+    cout << "Finished search. The best feature subset is {";
+    for (int i = 0; i < bestFeatures.size() - 1; i++) {
+        cout << bestFeatures.at(i) + 1 << ", ";
+    }
+    cout << bestFeatures.at(bestFeatures.size() - 1) + 1 << "}, which has an accuracy of " << overallBest * 100 << "%\n\n";
+
 }
 
 int main() {
